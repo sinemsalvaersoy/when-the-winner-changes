@@ -3,6 +3,7 @@ import pandas as pd
 from pinn_audit.analysis import (
     compare_sources,
     distribution_sensitivity,
+    mechanism_evidence_matrix,
     rank_switch_summary,
     rerun_winner_probabilities,
 )
@@ -69,3 +70,31 @@ def test_missing_results_do_not_enter_fresh_run_simulation():
     result = rerun_winner_probabilities(data, draws=1_000)
     assert list(result["method"]) == ["A"]
     assert result.iloc[0]["winner_probability"] == 1.0
+
+
+def test_mechanism_matrix_does_not_infer_causality_from_aggregate_tables():
+    data = pd.DataFrame(
+        [
+            {"source": "main_table", "metric": "L2RE", "family": "P", "case": "C", "method": "A", "mean": 0.10, "std": None},
+            {"source": "appendix_table", "metric": "L2RE", "family": "P", "case": "C", "method": "A", "mean": 0.11, "std": 0.01},
+            {"source": "appendix_table", "metric": "L2RE", "family": "P", "case": "C", "method": "B", "mean": 0.20, "std": 0.01},
+            {"source": "appendix_table", "metric": "mERR", "family": "P", "case": "C", "method": "A", "mean": 0.40, "std": 0.02},
+            {"source": "appendix_table", "metric": "mERR", "family": "P", "case": "C", "method": "B", "mean": 0.30, "std": 0.02},
+        ]
+    )
+    collocation = pd.DataFrame(
+        [
+            {"case": "C", "collocation_points": 10, "method": "A", "mean": 0.1},
+            {"case": "C", "collocation_points": 10, "method": "B", "mean": 0.2},
+            {"case": "C", "collocation_points": 20, "method": "A", "mean": 0.2},
+            {"case": "C", "collocation_points": 20, "method": "B", "mean": 0.1},
+        ]
+    )
+    result = mechanism_evidence_matrix(data, collocation)
+    assert not result["causal_conclusion_supported"].any()
+    assert result.loc[
+        result["question"].eq("optimization-basin sensitivity"), "current_status"
+    ].item() == "not identifiable"
+    assert result.loc[
+        result["question"].eq("collocation overfitting"), "current_status"
+    ].item() == "not identifiable"
