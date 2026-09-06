@@ -11,6 +11,7 @@ from .analysis import (
     collocation_switch_summary,
     compare_sources,
     distribution_sensitivity,
+    mechanism_evidence_matrix,
     rank_switch_summary,
     rerun_winner_probabilities,
 )
@@ -22,6 +23,7 @@ from .plots import (
     plot_winner_stability,
 )
 from .report import build_report
+from .mechanism_report import build_mechanism_report
 
 
 def main() -> None:
@@ -52,7 +54,11 @@ def main() -> None:
     collocation_switch_summary(collocation).to_csv(
         args.output / "collocation_sensitivity.csv", index=False
     )
+    mechanism_evidence_matrix(data, collocation).to_csv(
+        args.output / "mechanism_evidence.csv", index=False
+    )
     build_report(data, args.output / "AUDIT_REPORT.md", collocation)
+    build_mechanism_report(data, collocation, args.output / "MECHANISM_AUDIT.md")
     plot_source_conflicts(data, args.output / "source_conflicts.png")
     plot_winner_stability(data, args.output / "winner_stability.png")
     plot_metric_sensitivity(data, args.output / "metric_sensitivity.png")
