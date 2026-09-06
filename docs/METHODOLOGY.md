@@ -39,6 +39,12 @@ A benchmark claim is flagged when at least one of the following holds:
 
 The thresholds are diagnostic, not universal laws. They make review decisions explicit and auditable.
 
+## Layer 5: mechanism identifiability
+
+Observed rank dependence is separated from its possible causes. Aggregate means and standard deviations cannot identify optimization basins, collocation overfitting, or physical-invariant violations. The executable evidence matrix therefore marks each causal explanation as supported, contradicted, or not identifiable and records the intervention or raw data needed to test it.
+
+The preregistered experiments and interpretation rules are in `results/MECHANISM_AUDIT.md`. No mechanism claim is promoted from a rank switch alone.
+
 ## Limits
 
 This audit uses published summary statistics and versioned paper source. It cannot identify the correct value behind a reporting conflict, establish causality, estimate correlations between methods, or replace reproduction from raw predictions and per-seed outputs. Its 0.80 threshold is a transparent review convention rather than a universal scientific standard.
