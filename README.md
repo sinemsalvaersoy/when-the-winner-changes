@@ -12,11 +12,12 @@ PINN methods are often compared through a compact leaderboard, but a rank can ch
 
 The first case study examines the published results of [PINNacle](https://arxiv.org/abs/2306.08827), a benchmark spanning 22 PDE cases and multiple PINN variants.
 
-The audit asks three questions:
+The audit asks four questions:
 
 1. Are identical claims numerically consistent across the main paper and appendix?
 2. Under explicit distribution assumptions, how stable is the reported ranking on a simulated fresh run?
 3. Does the winner survive a change from global relative error to worst-case error?
+4. Which causal explanations for a rank change are supported by the available evidence, and which require new experiments?
 
 ## Headline result
 
@@ -42,6 +43,8 @@ Across the full audit:
 ![Collocation-budget sensitivity](results/collocation_sensitivity.png)
 
 The complete evidence trail is in [`results/AUDIT_REPORT.md`](results/AUDIT_REPORT.md). The project distinguishes source inconsistency, stochastic instability, and metric dependence rather than collapsing them into one failure label.
+
+The second-stage [`results/MECHANISM_AUDIT.md`](results/MECHANISM_AUDIT.md) asks why a winner changes. It converts optimization-basin sensitivity, collocation overfitting, and physical-invariant failure into falsifiable experiments while marking them `not identifiable` from aggregate benchmark tables alone.
 
 ## Quick start
 
@@ -69,16 +72,18 @@ pinn-audit --extract
 
 `metric_sensitivity.csv` shows whether the winner changes across L2RE, L1RE, and maximum error.
 
+`mechanism_evidence.csv` separates observed dependencies from causal explanations that still require interventions or raw run-level data.
+
 The figures are generated from the same tabular outputs used in the report.
 
 ## Why this is not another leaderboard
 
 The unit of analysis is the inference from result to claim, not only the model score. A lower mean error can coexist with an assumption-sensitive rank. A global metric can hide a poor worst-case region. A polished main table can disagree with its detailed evidence.
 
-The framework therefore keeps three layers separate:
+The framework therefore keeps five layers separate:
 
 \[
-\text{source consistency} \quad | \quad \text{rerun stability} \quad | \quad \text{metric dependence}
+\text{source} \quad | \quad \text{rerun} \quad | \quad \text{metric} \quad | \quad \text{budget} \quad | \quad \text{mechanism}
 \]
 
 See [`docs/METHODOLOGY.md`](docs/METHODOLOGY.md) for assumptions and limits.
