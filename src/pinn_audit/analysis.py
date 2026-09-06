@@ -76,6 +76,64 @@ def rerun_winner_probabilities(
     )
 
 
+def distribution_sensitivity(
+    data: pd.DataFrame,
+    metric: str = "L2RE",
+    draws: int = 100_000,
+    seed: int = 2026,
+) -> pd.DataFrame:
+    """Compare conditional fresh-run estimates under three moment-matched models.
+
+    The alternatives do not identify the true run distribution. They expose how
+    much the reported probability depends on an untestable distribution choice
+    when only three-run summaries are available.
+    """
+    rng = np.random.default_rng(seed)
+    appendix = data[
+        data["source"].eq("appendix_table")
+        & data["metric"].eq(metric)
+        & data["mean"].gt(0)
+        & data["std"].notna()
+    ]
+    records: list[dict[str, object]] = []
+    for (family, case), group in appendix.groupby(["family", "case"], sort=False):
+        means = group["mean"].to_numpy(float)
+        stds = np.maximum(group["std"].to_numpy(float), means * 1e-12)
+        methods = group["method"].to_numpy(str)
+
+        sigma2 = np.log1p(np.square(stds / means))
+        lognormal = rng.lognormal(
+            (np.log(means) - sigma2 / 2)[:, None],
+            np.sqrt(sigma2)[:, None],
+            size=(len(group), draws),
+        )
+        normal = np.maximum(
+            rng.normal(means[:, None], stds[:, None], size=(len(group), draws)), 0
+        )
+        shapes = np.square(means / stds)
+        scales = np.square(stds) / means
+        gamma = rng.gamma(shapes[:, None], scales[:, None], size=(len(group), draws))
+
+        row: dict[str, object] = {"family": family, "case": case, "metric": metric}
+        probabilities: list[float] = []
+        winners: list[str] = []
+        for label, samples in (
+            ("lognormal", lognormal),
+            ("nonnegative_normal", normal),
+            ("gamma", gamma),
+        ):
+            counts = np.bincount(samples.argmin(axis=0), minlength=len(group)) / draws
+            index = int(counts.argmax())
+            row[f"{label}_winner"] = methods[index]
+            row[f"{label}_probability"] = float(counts[index])
+            winners.append(methods[index])
+            probabilities.append(float(counts[index]))
+        row["winner_consistent_across_models"] = len(set(winners)) == 1
+        row["probability_range"] = max(probabilities) - min(probabilities)
+        records.append(row)
+    return pd.DataFrame.from_records(records).sort_values(["family", "case"])
+
+
 def metric_winners(data: pd.DataFrame) -> pd.DataFrame:
     """Return the reported winner under each available error definition."""
     appendix = data[data["source"].eq("appendix_table")].dropna(subset=["mean"])

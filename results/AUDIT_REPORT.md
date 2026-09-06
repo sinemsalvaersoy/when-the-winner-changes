@@ -3,25 +3,27 @@
 ## Executive finding
 
 The reported HInv vPINN L2RE is 0.0119 in the main table and 0.456 in the detailed appendix, a 38.3× difference.
-This discrepancy reverses the HInv winner and directly changes the paper's highlighted inverse-problem conclusion. It is a reporting inconsistency, not evidence that either number is the correct experimental result.
+This discrepancy reverses the HInv winner for that table and changes which result supports the associated comparison. It is a reporting inconsistency, not evidence that either number is the correct experimental result.
 
 ## Audit counts
 
 * 235 shared L2RE claims compared across main and appendix tables
 * 2 numerical source conflicts above exact transcription tolerance
-* 12 of 22 cases where the most likely fresh-run winner remains below 80% probability
+* 12 of 22 cases where the conditional log-normal estimate for the most likely fresh-run winner remains below the diagnostic 80% threshold
 * 13 of 22 cases where the winning method changes across L2RE, L1RE, and maximum error
 * 4 of 4 collocation ablations where the winning method changes with sampling budget
 
 ## Interpretation
 
-A leaderboard winner is not automatically a stable property of a method. The audit separates three failure modes: source inconsistency, run-to-run instability, and metric dependence. These modes support different conclusions and should not be collapsed into one accuracy number.
+A leaderboard winner is not automatically a stable property of a method. The audit separates source inconsistency, conditional rerun stability, and metric dependence. These diagnostics support different conclusions and should not be collapsed into one accuracy number.
 
-The rerun analysis uses moment-matched log-normal distributions derived from the reported three-run mean and standard deviation. It is a sensitivity analysis for a fresh run, not a posterior probability and not a substitute for raw seeds.
+The rerun analysis uses moment-matched distributions derived from the reported three-run mean and standard deviation. Its probabilities are conditional simulation estimates, not measured frequencies, posterior probabilities, or substitutes for raw seeds. Independence between methods is assumed because run-level pairing is unavailable.
+
+Across log-normal, nonnegative-normal, and gamma models, the identity of the most likely winner is unchanged in 22 of 22 cases. The estimated winning probability can nevertheless move by as much as 21.0%, so probability magnitudes should not be read as distribution-free facts.
 
 ## Most fragile fresh-run leaders
 
-| PDE case | Most probable method | Fresh-run win probability | Rank entropy |
+| PDE case | Most probable method | Conditional log-normal estimate | Rank entropy |
 | --- | --- | ---: | ---: |
 | Heat 2d-LT | LAAF | 37.4% | 0.65 |
 | Burgers 1d-C | LAAF | 39.2% | 0.58 |
@@ -31,6 +33,11 @@ The rerun analysis uses moment-matched log-normal distributions derived from the
 | NS 2d-LT | gPINN | 61.7% | 0.40 |
 | Inverse HInv | LRA | 62.5% | 0.29 |
 | NS 2d-C | LAAF | 63.0% | 0.29 |
+
+## Distribution-model sensitivity
+
+The full comparison is recorded in `distribution_sensitivity.csv`. These alternative models are robustness checks, not candidates for the true run distribution.
+Maximum-error results are unavailable for some methods. Winner comparisons use the methods reported for each metric and should therefore be read together with coverage differences.
 
 ## Metric-sensitive cases
 

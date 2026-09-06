@@ -15,12 +15,12 @@ The first case study examines the published results of [PINNacle](https://arxiv.
 The audit asks three questions:
 
 1. Are identical claims numerically consistent across the main paper and appendix?
-2. How likely is the reported winner to remain the winner on a fresh stochastic run?
+2. Under explicit distribution assumptions, how stable is the reported ranking on a simulated fresh run?
 3. Does the winner survive a change from global relative error to worst-case error?
 
 ## Headline result
 
-The audit finds that the HInv vPINN L2 relative error is reported as **0.0119** in the main table and **0.456** in the detailed appendix. The 38.3× discrepancy reverses the winning method and changes a conclusion highlighted in the paper's discussion.
+The audit finds that the HInv vPINN L2 relative error is reported as **0.0119** in the main table and **0.456** in the detailed appendix. The 38.3× discrepancy reverses the winning method for that case and changes which result supports the associated comparison.
 
 This is a reporting inconsistency, not evidence that either value is correct. Resolving it requires raw per-seed outputs or author confirmation.
 
@@ -28,9 +28,10 @@ Across the full audit:
 
 * 235 shared L2RE claims are checked across the two source tables
 * 2 numerical conflicts are found
-* 12 of 22 reported winners have less than 80% estimated probability of winning a fresh run
+* 12 of 22 cases fall below a diagnostic 80% conditional ranking-stability threshold under the log-normal model
 * 13 of 22 PDE cases select different winners when the error definition changes
 * all 4 published collocation ablations change winners as the sampling budget changes
+* the most likely winner is unchanged across three distribution models in all 22 cases, while probability magnitudes move by as much as 21 percentage points
 
 ![Main table and appendix conflicts](results/source_conflicts.png)
 
@@ -62,7 +63,9 @@ pinn-audit --extract
 
 `source_consistency.csv` records every comparable main-text and appendix claim.
 
-`winner_probabilities.csv` estimates fresh-run ranking stability from reported three-run summaries.
+`winner_probabilities.csv` reports conditional log-normal fresh-run simulations from published three-run summaries.
+
+`distribution_sensitivity.csv` shows how those estimates change under log-normal, nonnegative-normal, and gamma assumptions.
 
 `metric_sensitivity.csv` shows whether the winner changes across L2RE, L1RE, and maximum error.
 
@@ -70,7 +73,7 @@ The figures are generated from the same tabular outputs used in the report.
 
 ## Why this is not another leaderboard
 
-The unit of analysis is the inference from result to claim, not only the model score. A lower mean error can coexist with an unstable rank. A global metric can hide a poor worst-case region. A polished main table can disagree with its detailed evidence.
+The unit of analysis is the inference from result to claim, not only the model score. A lower mean error can coexist with an assumption-sensitive rank. A global metric can hide a poor worst-case region. A polished main table can disagree with its detailed evidence.
 
 The framework therefore keeps three layers separate:
 

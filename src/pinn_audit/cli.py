@@ -10,6 +10,7 @@ import pandas as pd
 from .analysis import (
     collocation_switch_summary,
     compare_sources,
+    distribution_sensitivity,
     rank_switch_summary,
     rerun_winner_probabilities,
 )
@@ -44,6 +45,9 @@ def main() -> None:
     args.output.mkdir(parents=True, exist_ok=True)
     compare_sources(data).to_csv(args.output / "source_consistency.csv", index=False)
     rerun_winner_probabilities(data).to_csv(args.output / "winner_probabilities.csv", index=False)
+    distribution_sensitivity(data).to_csv(
+        args.output / "distribution_sensitivity.csv", index=False
+    )
     rank_switch_summary(data).to_csv(args.output / "metric_sensitivity.csv", index=False)
     collocation_switch_summary(collocation).to_csv(
         args.output / "collocation_sensitivity.csv", index=False

@@ -1,6 +1,11 @@
 import pandas as pd
 
-from pinn_audit.analysis import compare_sources, rank_switch_summary, rerun_winner_probabilities
+from pinn_audit.analysis import (
+    compare_sources,
+    distribution_sensitivity,
+    rank_switch_summary,
+    rerun_winner_probabilities,
+)
 
 
 def test_source_conflict_is_detected():
@@ -41,3 +46,26 @@ def test_metric_switch_is_detected():
     assert bool(result.iloc[0]["metric_sensitive"])
     assert result.iloc[0]["distinct_winners"] == 2
 
+
+def test_distribution_sensitivity_exposes_model_dependence():
+    data = pd.DataFrame(
+        [
+            {"source": "appendix_table", "metric": "L2RE", "family": "P", "case": "C", "method": "A", "mean": 0.10, "std": 0.04},
+            {"source": "appendix_table", "metric": "L2RE", "family": "P", "case": "C", "method": "B", "mean": 0.13, "std": 0.04},
+        ]
+    )
+    result = distribution_sensitivity(data, draws=30_000)
+    assert result.iloc[0]["winner_consistent_across_models"]
+    assert result.iloc[0]["probability_range"] > 0
+
+
+def test_missing_results_do_not_enter_fresh_run_simulation():
+    data = pd.DataFrame(
+        [
+            {"source": "appendix_table", "metric": "L2RE", "family": "P", "case": "C", "method": "A", "mean": 0.10, "std": 0.01},
+            {"source": "appendix_table", "metric": "L2RE", "family": "P", "case": "C", "method": "B", "mean": None, "std": None},
+        ]
+    )
+    result = rerun_winner_probabilities(data, draws=1_000)
+    assert list(result["method"]) == ["A"]
+    assert result.iloc[0]["winner_probability"] == 1.0
