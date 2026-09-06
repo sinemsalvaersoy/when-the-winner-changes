@@ -1,0 +1,5 @@
+case,budgets,distinct_winners,winner_sequence,budget_sensitive
+Burgers1d,4,2,PINN-LRA → PINN-LRA → PINN-LRA → PINN,True
+GS,4,2,PINN-LRA → PINN → PINN-LRA → PINN,True
+Heat2d-CG,4,2,PINN-LRA → PINN → PINN-LRA → PINN,True
+Poisson2d-C,4,2,PINN-LRA → PINN-LRA → PINN → PINN-LRA,True

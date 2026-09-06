@@ -1,0 +1,10 @@
+cff-version: 1.2.0
+message: "If you use this audit framework, please cite it."
+title: "When the Winner Changes: A Reliability Audit of PINN Benchmarks"
+type: software
+authors:
+  - family-names: "Ersoy"
+    given-names: "Sinem Şalva"
+version: 0.1.0
+date-released: 2026-09-06
+license: MIT

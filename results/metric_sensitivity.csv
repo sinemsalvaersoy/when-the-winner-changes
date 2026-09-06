@@ -1,0 +1,23 @@
+family,case,metrics,distinct_winners,winners,metric_sensitive
+Heat,2d-MS,3,3,"FBPINN, NTK, RAR",True
+NS,2d-C,3,3,"GAAF, LAAF, vPINN",True
+Burgers,1d-C,3,2,"LAAF, PINN",True
+Burgers,2d-C,3,2,"LRA, gPINN",True
+Chaotic,GS,3,2,"FBPINN, MultiAdam",True
+Chaotic,KS,3,2,"LRA, NTK",True
+Heat,2d-CG,3,2,"LAAF, LRA",True
+Heat,2d-LT,3,2,"GAAF, PINN",True
+Heat,2d-VC,3,2,"LRA, NTK",True
+NS,2d-LT,3,2,"PINN, gPINN",True
+Poisson,2d-MS,3,2,"LAAF, MultiAdam",True
+Poisson,3d-CG,3,2,"LRA, vPINN",True
+Wave,2d-CG,3,2,"FBPINN, GAAF",True
+High dim,HNd,3,1,MultiAdam,False
+High dim,PNd,3,1,LRA,False
+Inverse,HInv,2,1,LRA,False
+Inverse,PInv,2,1,vPINN,False
+NS,2d-CG,3,1,LAAF,False
+Poisson,2d-C,3,1,NTK,False
+Poisson,2d-CG,3,1,NTK,False
+Wave,1d-C,3,1,NTK,False
+Wave,2d-MS,3,1,vPINN,False
