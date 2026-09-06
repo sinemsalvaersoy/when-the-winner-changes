@@ -176,3 +176,83 @@ def collocation_switch_summary(data: pd.DataFrame) -> pd.DataFrame:
         .reset_index()
         .assign(budget_sensitive=lambda frame: frame["distinct_winners"] > 1)
     )
+
+
+def mechanism_evidence_matrix(
+    data: pd.DataFrame, collocation: pd.DataFrame
+) -> pd.DataFrame:
+    """Separate observed fragility from untested causal explanations.
+
+    Published aggregate tables can reveal that a ranking depends on a source,
+    metric, distribution model, or sampling budget. They cannot by themselves
+    identify optimization basins, collocation overfitting, or violations of a
+    physical invariant. This matrix makes that evidential boundary executable.
+    """
+    consistency = compare_sources(data)
+    metric_summary = rank_switch_summary(data)
+    budget_summary = collocation_switch_summary(collocation)
+    assumptions = distribution_sensitivity(data, draws=20_000)
+
+    conflicts = int((~consistency["consistent"]).sum())
+    metric_switches = int(metric_summary["metric_sensitive"].sum())
+    budget_switches = int(budget_summary["budget_sensitive"].sum())
+    model_winner_switches = int(
+        (~assumptions["winner_consistent_across_models"]).sum()
+    )
+    max_probability_range = float(assumptions["probability_range"].max())
+
+    rows = [
+        {
+            "question": "source consistency",
+            "current_status": "observed fragility" if conflicts else "not observed",
+            "current_evidence": f"{conflicts} conflicting shared claims",
+            "causal_conclusion_supported": False,
+            "required_next_data": "author confirmation or raw result records",
+        },
+        {
+            "question": "metric dependence",
+            "current_status": "observed fragility" if metric_switches else "not observed",
+            "current_evidence": f"{metric_switches} cases change winner across metrics",
+            "causal_conclusion_supported": False,
+            "required_next_data": "task-specific utility and error-field analysis",
+        },
+        {
+            "question": "collocation-budget dependence",
+            "current_status": "observed fragility" if budget_switches else "not observed",
+            "current_evidence": f"{budget_switches} ablations change winner across budgets",
+            "causal_conclusion_supported": False,
+            "required_next_data": "paired reruns on independently sampled collocation sets",
+        },
+        {
+            "question": "rerun-model dependence",
+            "current_status": "probability sensitive",
+            "current_evidence": (
+                f"{model_winner_switches} winner-identity changes; maximum probability range "
+                f"{max_probability_range:.1%}"
+            ),
+            "causal_conclusion_supported": False,
+            "required_next_data": "raw paired per-seed results",
+        },
+        {
+            "question": "optimization-basin sensitivity",
+            "current_status": "not identifiable",
+            "current_evidence": "only three-run means and standard deviations are published",
+            "causal_conclusion_supported": False,
+            "required_next_data": "paired initializations, checkpoints, and loss trajectories",
+        },
+        {
+            "question": "collocation overfitting",
+            "current_status": "not identifiable",
+            "current_evidence": "no paired training-point and held-out residual fields",
+            "causal_conclusion_supported": False,
+            "required_next_data": "independent dense residual grid for every trained model",
+        },
+        {
+            "question": "physical-invariant violation",
+            "current_status": "not identifiable",
+            "current_evidence": "benchmark tables do not report invariant diagnostics",
+            "causal_conclusion_supported": False,
+            "required_next_data": "PDE-specific conservation and boundary-condition diagnostics",
+        },
+    ]
+    return pd.DataFrame.from_records(rows)
