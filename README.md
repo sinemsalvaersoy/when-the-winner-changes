@@ -1,5 +1,7 @@
 # When the Winner Changes
 
+[![audit-ci](https://github.com/sinemsalvaersoy/when-the-winner-changes/actions/workflows/ci.yml/badge.svg)](https://github.com/sinemsalvaersoy/when-the-winner-changes/actions/workflows/ci.yml)
+
 ## A reliability audit of PINN benchmarks
 
 A benchmark reports a winner. This project asks whether the winner survives contact with the benchmark's own evidence.
