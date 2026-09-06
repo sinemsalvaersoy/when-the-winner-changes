@@ -1,0 +1,8 @@
+question,current_status,current_evidence,causal_conclusion_supported,required_next_data
+source consistency,observed fragility,2 conflicting shared claims,False,author confirmation or raw result records
+metric dependence,observed fragility,13 cases change winner across metrics,False,task-specific utility and error-field analysis
+collocation-budget dependence,observed fragility,4 ablations change winner across budgets,False,paired reruns on independently sampled collocation sets
+rerun-model dependence,probability sensitive,0 winner-identity changes; maximum probability range 21.0%,False,raw paired per-seed results
+optimization-basin sensitivity,not identifiable,only three-run means and standard deviations are published,False,"paired initializations, checkpoints, and loss trajectories"
+collocation overfitting,not identifiable,no paired training-point and held-out residual fields,False,independent dense residual grid for every trained model
+physical-invariant violation,not identifiable,benchmark tables do not report invariant diagnostics,False,PDE-specific conservation and boundary-condition diagnostics
