@@ -1,0 +1,9 @@
+case,upstream_class,method,seed,collocation_draw,collocation_points,iterations
+Burgers1d,Burgers1D,adam,1001,1,512,20000
+Burgers1d,Burgers1D,lra,1001,1,512,20000
+Burgers1d,Burgers1D,adam,1002,1,512,20000
+Burgers1d,Burgers1D,lra,1002,1,512,20000
+GS,GrayScottEquation,adam,1001,1,512,20000
+GS,GrayScottEquation,lra,1001,1,512,20000
+GS,GrayScottEquation,adam,1002,1,512,20000
+GS,GrayScottEquation,lra,1002,1,512,20000
