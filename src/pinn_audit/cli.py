@@ -24,6 +24,7 @@ from .plots import (
 )
 from .report import build_report
 from .mechanism_report import build_mechanism_report
+from .representation_pilot import write_pilot_outputs
 
 
 def main() -> None:
@@ -63,6 +64,7 @@ def main() -> None:
     plot_winner_stability(data, args.output / "winner_stability.png")
     plot_metric_sensitivity(data, args.output / "metric_sensitivity.png")
     plot_collocation_sensitivity(collocation, args.output / "collocation_sensitivity.png")
+    write_pilot_outputs(args.output)
 
 
 if __name__ == "__main__":

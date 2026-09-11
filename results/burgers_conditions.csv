@@ -1,0 +1,10 @@
+factor,status,value
+Physical equation,Fixed,Periodic viscous Burgers equation
+Viscosity,Fixed,0.03
+Time horizon,Fixed,0.3
+Spatial resolution,Fixed,64
+Train and test samples,Fixed,140 and 80
+Data seeds,Paired,"11, 17, 23"
+Learners,Fixed,Linear ridge and 3 nearest neighbours
+Input and output encoding,Changed,Full grid or 4 mode POD
+Evaluation,Fixed,Relative L2 and steepest gradient location error

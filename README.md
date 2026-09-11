@@ -50,6 +50,16 @@ The second-stage [`results/MECHANISM_AUDIT.md`](results/MECHANISM_AUDIT.md) asks
 
 The paired rerun extension is specified in [`docs/RERUN_PROTOCOL.md`](docs/RERUN_PROTOCOL.md). It pins the upstream code, defines paired seed and collocation blocks, rejects incomplete comparisons, and separates rank switching from residual generalization gaps before GPU evidence is admitted into the audit.
 
+## Controlled representation pilot
+
+The repository now moves from retrospective audit to a small intervention on the viscous Burgers equation. The same trajectories and learners are evaluated on the full spatial grid and a four mode POD encoding.
+
+KNN wins under relative L2 error in both representations. For the location of the steepest gradient, KNN wins on the grid and ridge wins after POD compression. The change appears across all three paired data seeds even though four POD modes retain more than 99.3 percent of output variance.
+
+![Burgers representation reversal](results/burgers_representation_reversal.png)
+
+This is a bounded mechanism result, not a universal claim about POD. The design, exact controls, interpretation boundary, and raw outputs are documented in [`docs/BURGERS_REPRESENTATION_PILOT.md`](docs/BURGERS_REPRESENTATION_PILOT.md).
+
 ## Quick start
 
 ```bash
