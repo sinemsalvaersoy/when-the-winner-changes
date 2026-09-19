@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, replace
 from pathlib import Path
 
 import matplotlib.pyplot as plt
@@ -22,6 +22,18 @@ class BurgersConfig:
     neighbours: int = 3
     ridge_penalty: float = 1e-5
     seeds: tuple[int, ...] = (11, 17, 23)
+
+
+@dataclass(frozen=True)
+class RobustnessConfig:
+    """Axes for testing whether the representation result survives perturbations."""
+
+    grid_points: tuple[int, ...] = (64, 128, 256)
+    pod_modes: tuple[int, ...] = (2, 4, 8, 16)
+    seeds: tuple[int, ...] = (11, 17, 23, 29, 31, 37, 41, 43, 47, 53)
+    gradient_weight: float = 1.0
+    bootstrap_draws: int = 2_000
+    bootstrap_seed: int = 20260919
 
 
 def _rhs(u: np.ndarray, viscosity: float, wave_numbers: np.ndarray) -> np.ndarray:
@@ -89,6 +101,43 @@ def _scores(target: np.ndarray, prediction: np.ndarray) -> tuple[float, float]:
     circular_separation = np.minimum(separation, target.shape[1] - separation)
     location_error = np.mean(circular_separation * 2 * np.pi / target.shape[1])
     return float(relative_l2), float(location_error)
+
+
+def _gradient(values: np.ndarray) -> np.ndarray:
+    """Return the periodic central difference used by the local observable."""
+    return 0.5 * (np.roll(values, -1, axis=1) - np.roll(values, 1, axis=1))
+
+
+def _gradient_aware_basis(
+    centered_snapshots: np.ndarray,
+    modes: int,
+    gradient_weight: float,
+) -> tuple[np.ndarray, np.ndarray]:
+    """Build a POD basis in an L2 plus periodic-gradient inner product.
+
+    The returned coordinates and decoder minimize snapshot error after whitening
+    by the chosen inner product. This makes the intervention explicit instead of
+    changing the learner or its training data.
+    """
+    points = centered_snapshots.shape[1]
+    difference = np.zeros((points, points))
+    indices = np.arange(points)
+    difference[indices, (indices + 1) % points] = 0.5
+    difference[indices, (indices - 1) % points] = -0.5
+    metric = np.eye(points) + gradient_weight * difference @ difference.T
+    cholesky = np.linalg.cholesky(metric)
+    transformed = centered_snapshots @ cholesky
+    right_vectors = np.linalg.svd(transformed, full_matrices=False)[2][:modes]
+    coordinates = transformed @ right_vectors.T
+    decoder = np.linalg.solve(cholesky.T, right_vectors.T).T
+    return coordinates, decoder
+
+
+def _retained_fraction(reference: np.ndarray, reconstruction: np.ndarray) -> float:
+    denominator = np.square(reference).sum()
+    if denominator == 0:
+        return 1.0
+    return float(1.0 - np.square(reference - reconstruction).sum() / denominator)
 
 
 def run_representation_pilot(config: BurgersConfig = BurgersConfig()) -> pd.DataFrame:
@@ -235,3 +284,341 @@ def write_pilot_outputs(output: Path, config: BurgersConfig = BurgersConfig()) -
     summary.to_csv(output / "burgers_representation_summary.csv", index=False)
     conditions_table(config).to_csv(output / "burgers_conditions.csv", index=False)
     plot_pilot(summary, output / "burgers_representation_reversal.png")
+
+
+def run_robustness_experiment(
+    robustness: RobustnessConfig = RobustnessConfig(),
+    base: BurgersConfig = BurgersConfig(),
+) -> pd.DataFrame:
+    """Run a paired seed, resolution, modal-budget, and basis-objective sweep."""
+    records: list[dict[str, object]] = []
+    for grid_points in robustness.grid_points:
+        config = replace(base, grid_points=grid_points)
+        for seed in robustness.seeds:
+            inputs, targets = generate_dataset(seed, config)
+            split = config.train_samples
+            train_x, test_x = inputs[:split], inputs[split:]
+            train_y, test_y = targets[:split], targets[split:]
+            input_mean = train_x.mean(axis=0)
+            output_mean = train_y.mean(axis=0)
+            centered_x = train_x - input_mean
+            centered_y = train_y - output_mean
+            input_right = np.linalg.svd(centered_x, full_matrices=False)[2]
+            output_right = np.linalg.svd(centered_y, full_matrices=False)[2]
+
+            grid_predictions = {
+                "ridge": _ridge_predict(train_x, train_y, test_x, config.ridge_penalty),
+                "knn": _knn_predict(train_x, train_y, test_x, config.neighbours),
+            }
+
+            for modes in robustness.pod_modes:
+                if modes > min(centered_x.shape):
+                    raise ValueError(
+                        f"POD modes ({modes}) exceed the available rank for grid {grid_points}"
+                    )
+                input_basis = input_right[:modes]
+                encoded_train_x = centered_x @ input_basis.T
+                encoded_test_x = (test_x - input_mean) @ input_basis.T
+
+                l2_basis = output_right[:modes]
+                l2_train_y = centered_y @ l2_basis.T
+                gradient_train_y, gradient_decoder = _gradient_aware_basis(
+                    centered_y,
+                    modes,
+                    robustness.gradient_weight,
+                )
+
+                representations = {
+                    "grid": (
+                        grid_predictions,
+                        1.0,
+                        1.0,
+                    ),
+                    "pod_l2": (
+                        {
+                            "ridge": _ridge_predict(
+                                encoded_train_x,
+                                l2_train_y,
+                                encoded_test_x,
+                                config.ridge_penalty,
+                            )
+                            @ l2_basis
+                            + output_mean,
+                            "knn": _knn_predict(
+                                encoded_train_x,
+                                l2_train_y,
+                                encoded_test_x,
+                                config.neighbours,
+                            )
+                            @ l2_basis
+                            + output_mean,
+                        },
+                        _retained_fraction(centered_y, l2_train_y @ l2_basis),
+                        _retained_fraction(_gradient(centered_y), _gradient(l2_train_y @ l2_basis)),
+                    ),
+                    "pod_gradient": (
+                        {
+                            "ridge": _ridge_predict(
+                                encoded_train_x,
+                                gradient_train_y,
+                                encoded_test_x,
+                                config.ridge_penalty,
+                            )
+                            @ gradient_decoder
+                            + output_mean,
+                            "knn": _knn_predict(
+                                encoded_train_x,
+                                gradient_train_y,
+                                encoded_test_x,
+                                config.neighbours,
+                            )
+                            @ gradient_decoder
+                            + output_mean,
+                        },
+                        _retained_fraction(
+                            centered_y,
+                            gradient_train_y @ gradient_decoder,
+                        ),
+                        _retained_fraction(
+                            _gradient(centered_y),
+                            _gradient(gradient_train_y @ gradient_decoder),
+                        ),
+                    ),
+                }
+
+                for representation, (
+                    predictions,
+                    l2_retained,
+                    gradient_retained,
+                ) in representations.items():
+                    for model, prediction in predictions.items():
+                        relative_l2, location_error = _scores(test_y, prediction)
+                        records.append(
+                            {
+                                "seed": seed,
+                                "grid_points": grid_points,
+                                "pod_modes": modes,
+                                "representation": representation,
+                                "model": model,
+                                "relative_l2": relative_l2,
+                                "steepest_gradient_location_error_radians": location_error,
+                                "output_l2_fraction_retained": l2_retained,
+                                "output_gradient_fraction_retained": gradient_retained,
+                            }
+                        )
+    return pd.DataFrame.from_records(records)
+
+
+def summarize_robustness(results: pd.DataFrame) -> pd.DataFrame:
+    """Aggregate paired scores without treating modal budgets as extra grid trials."""
+    return (
+        results.groupby(
+            ["grid_points", "pod_modes", "representation", "model"],
+            as_index=False,
+        )
+        .agg(
+            trials=("seed", "nunique"),
+            relative_l2=("relative_l2", "mean"),
+            relative_l2_std=("relative_l2", "std"),
+            steepest_gradient_location_error_radians=(
+                "steepest_gradient_location_error_radians",
+                "mean",
+            ),
+            steepest_gradient_location_error_std=(
+                "steepest_gradient_location_error_radians",
+                "std",
+            ),
+            output_l2_fraction_retained=("output_l2_fraction_retained", "mean"),
+            output_gradient_fraction_retained=(
+                "output_gradient_fraction_retained",
+                "mean",
+            ),
+        )
+    )
+
+
+def winner_probabilities(
+    results: pd.DataFrame,
+    robustness: RobustnessConfig = RobustnessConfig(),
+) -> pd.DataFrame:
+    """Estimate model win probabilities and paired-seed bootstrap intervals."""
+    metrics = ("relative_l2", "steepest_gradient_location_error_radians")
+    block = ["seed", "grid_points", "pod_modes", "representation"]
+    winners: list[pd.DataFrame] = []
+    for metric in metrics:
+        indices = results.groupby(block, sort=True)[metric].idxmin()
+        selected = results.loc[indices, block + ["model"]].copy()
+        selected["metric"] = metric
+        winners.append(selected)
+    winner_rows = pd.concat(winners, ignore_index=True)
+
+    rng = np.random.default_rng(robustness.bootstrap_seed)
+    records: list[dict[str, object]] = []
+    group_columns = ["grid_points", "pod_modes", "representation", "metric"]
+    for keys, group in winner_rows.groupby(group_columns, sort=True):
+        labels = group.sort_values("seed")["model"].to_numpy()
+        for model in sorted(results["model"].unique()):
+            indicators = labels == model
+            trials = len(indicators)
+            probability = float(indicators.mean())
+            z_value = 1.959963984540054
+            denominator = 1 + z_value**2 / trials
+            centre = (probability + z_value**2 / (2 * trials)) / denominator
+            half_width = (
+                z_value
+                * np.sqrt(
+                    probability * (1 - probability) / trials
+                    + z_value**2 / (4 * trials**2)
+                )
+                / denominator
+            )
+            draws = rng.choice(
+                indicators,
+                size=(robustness.bootstrap_draws, trials),
+                replace=True,
+            ).mean(axis=1)
+            records.append(
+                {
+                    **dict(zip(group_columns, keys)),
+                    "model": model,
+                    "wins": int(indicators.sum()),
+                    "trials": trials,
+                    "winner_probability": probability,
+                    "bootstrap_ci_low": float(np.quantile(draws, 0.025)),
+                    "bootstrap_ci_high": float(np.quantile(draws, 0.975)),
+                    "wilson_ci_low": float(centre - half_width),
+                    "wilson_ci_high": float(centre + half_width),
+                }
+            )
+    return pd.DataFrame.from_records(records)
+
+
+def plot_robustness(summary: pd.DataFrame, path: Path) -> None:
+    """Plot retained information beside the local-observable error."""
+    pod = summary[summary["representation"].ne("grid")]
+    pod = (
+        pod.groupby(
+            ["grid_points", "pod_modes", "representation"],
+            as_index=False,
+        )
+        .agg(
+            output_l2_fraction_retained=("output_l2_fraction_retained", "mean"),
+            location_error=("steepest_gradient_location_error_radians", "min"),
+        )
+        .groupby(["pod_modes", "representation"], as_index=False)
+        .agg(
+            output_l2_fraction_retained=("output_l2_fraction_retained", "mean"),
+            location_error=("location_error", "mean"),
+        )
+    )
+    fig, axes = plt.subplots(1, 2, figsize=(10.5, 4.2))
+    labels = {"pod_l2": "L2 POD", "pod_gradient": "Gradient-aware POD"}
+    colors = {"pod_l2": "#3b6ea8", "pod_gradient": "#d46a3a"}
+    styles = {
+        "pod_l2": {"linestyle": "--", "marker": "o", "markerfacecolor": "white", "zorder": 3},
+        "pod_gradient": {"linestyle": "-", "marker": "x", "zorder": 2},
+    }
+    for representation in ("pod_gradient", "pod_l2"):
+        subset = pod[pod["representation"].eq(representation)]
+        axes[0].plot(
+            subset["pod_modes"],
+            100 * subset["output_l2_fraction_retained"],
+            color=colors[representation],
+            label=labels[representation],
+            **styles[representation],
+        )
+        axes[1].plot(
+            subset["pod_modes"],
+            subset["location_error"],
+            color=colors[representation],
+            label=labels[representation],
+            **styles[representation],
+        )
+    axes[0].set_ylabel("Output L2 variance retained · %")
+    axes[1].set_ylabel("Best location error · radians")
+    for ax in axes:
+        ax.set_xlabel("Modal budget")
+        ax.set_xticks(sorted(pod["pod_modes"].unique()))
+        ax.grid(alpha=0.18)
+        ax.spines[["top", "right"]].set_visible(False)
+    axes[0].legend(frameon=False)
+    axes[0].set_title("Compression", loc="left", weight="bold")
+    axes[1].set_title("Physical observable", loc="left", weight="bold")
+    fig.suptitle(
+        "Retained variance and observable fidelity are separate tests",
+        x=0.07,
+        ha="left",
+        weight="bold",
+    )
+    fig.tight_layout()
+    path.parent.mkdir(parents=True, exist_ok=True)
+    fig.savefig(path, dpi=180, bbox_inches="tight", facecolor="white")
+    plt.close(fig)
+
+
+def plot_winner_probabilities(probabilities: pd.DataFrame, path: Path) -> None:
+    """Plot how often each learner wins the local observable across paired seeds."""
+    data = probabilities[
+        probabilities["metric"].eq("steepest_gradient_location_error_radians")
+        & probabilities["model"].eq("ridge")
+    ]
+    data = (
+        data.groupby(["pod_modes", "representation"], as_index=False)
+        ["winner_probability"]
+        .mean()
+    )
+    labels = {
+        "grid": "Grid",
+        "pod_l2": "L2 POD",
+        "pod_gradient": "Gradient-aware POD",
+    }
+    colors = {"grid": "#666666", "pod_l2": "#3b6ea8", "pod_gradient": "#d46a3a"}
+    styles = {
+        "grid": {"linestyle": ":", "marker": "s"},
+        "pod_l2": {"linestyle": "--", "marker": "o", "markerfacecolor": "white", "zorder": 3},
+        "pod_gradient": {"linestyle": "-", "marker": "x", "zorder": 2},
+    }
+    fig, ax = plt.subplots(figsize=(6.4, 4.2))
+    for representation in ("grid", "pod_gradient", "pod_l2"):
+        subset = data[data["representation"].eq(representation)]
+        ax.plot(
+            subset["pod_modes"],
+            subset["winner_probability"],
+            linewidth=2.2,
+            label=labels[representation],
+            color=colors[representation],
+            **styles[representation],
+        )
+    ax.axhline(0.5, color="#999999", linestyle=":", linewidth=1)
+    ax.set_xlabel("Modal budget")
+    ax.set_ylabel("Probability that ridge wins")
+    ax.set_ylim(-0.03, 1.03)
+    ax.set_xticks(sorted(data["pod_modes"].unique()))
+    ax.grid(axis="y", alpha=0.18)
+    ax.spines[["top", "right"]].set_visible(False)
+    ax.legend(frameon=False)
+    ax.set_title("Representation changes the winning probability", loc="left", weight="bold")
+    fig.tight_layout()
+    path.parent.mkdir(parents=True, exist_ok=True)
+    fig.savefig(path, dpi=180, bbox_inches="tight", facecolor="white")
+    plt.close(fig)
+
+
+def write_robustness_outputs(
+    output: Path,
+    robustness: RobustnessConfig = RobustnessConfig(),
+    base: BurgersConfig = BurgersConfig(),
+) -> None:
+    """Run the robustness sweep and persist its complete evidence trail."""
+    output.mkdir(parents=True, exist_ok=True)
+    raw = run_robustness_experiment(robustness, base)
+    summary = summarize_robustness(raw)
+    probabilities = winner_probabilities(raw, robustness)
+    raw.to_csv(output / "burgers_robustness_runs.csv", index=False)
+    summary.to_csv(output / "burgers_robustness_summary.csv", index=False)
+    probabilities.to_csv(output / "burgers_robustness_winner_probabilities.csv", index=False)
+    plot_robustness(summary, output / "burgers_robustness_variance_observable.png")
+    plot_winner_probabilities(
+        probabilities,
+        output / "burgers_robustness_winner_probability.png",
+    )

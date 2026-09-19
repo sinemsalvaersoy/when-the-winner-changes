@@ -2,10 +2,14 @@ import numpy as np
 
 from pinn_audit.representation_pilot import (
     BurgersConfig,
+    RobustnessConfig,
     conditions_table,
     run_representation_pilot,
+    run_robustness_experiment,
     solve_burgers,
     summarize_pilot,
+    summarize_robustness,
+    winner_probabilities,
 )
 
 
@@ -47,3 +51,62 @@ def test_conditions_identify_the_representation_as_changed():
     conditions = conditions_table()
     changed = conditions[conditions["status"].eq("Changed")]
     assert changed["factor"].tolist() == ["Input and output encoding"]
+
+
+def test_small_robustness_sweep_is_paired_and_complete():
+    base = BurgersConfig(
+        grid_points=16,
+        train_samples=12,
+        test_samples=6,
+        time_horizon=0.005,
+        time_step=0.001,
+    )
+    robustness = RobustnessConfig(
+        grid_points=(16,),
+        pod_modes=(2, 4),
+        seeds=(3, 5),
+        bootstrap_draws=100,
+    )
+    results = run_robustness_experiment(robustness, base)
+    assert len(results) == 2 * 2 * 3 * 2
+    assert set(results["representation"]) == {"grid", "pod_l2", "pod_gradient"}
+    assert set(results["model"]) == {"ridge", "knn"}
+    assert np.isfinite(
+        results[
+            [
+                "relative_l2",
+                "steepest_gradient_location_error_radians",
+                "output_l2_fraction_retained",
+                "output_gradient_fraction_retained",
+            ]
+        ]
+    ).all().all()
+    assert (summarize_robustness(results)["trials"] == 2).all()
+
+
+def test_winner_probabilities_partition_each_condition():
+    base = BurgersConfig(
+        grid_points=16,
+        train_samples=12,
+        test_samples=6,
+        time_horizon=0.005,
+        time_step=0.001,
+    )
+    robustness = RobustnessConfig(
+        grid_points=(16,),
+        pod_modes=(2,),
+        seeds=(3, 5),
+        bootstrap_draws=100,
+    )
+    probabilities = winner_probabilities(
+        run_robustness_experiment(robustness, base),
+        robustness,
+    )
+    totals = probabilities.groupby(
+        ["grid_points", "pod_modes", "representation", "metric"]
+    )["winner_probability"].sum()
+    assert np.allclose(totals, 1.0)
+    assert probabilities["bootstrap_ci_low"].between(0, 1).all()
+    assert probabilities["bootstrap_ci_high"].between(0, 1).all()
+    assert probabilities["wilson_ci_low"].between(0, 1).all()
+    assert probabilities["wilson_ci_high"].between(0, 1).all()

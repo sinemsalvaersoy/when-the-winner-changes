@@ -60,6 +60,28 @@ KNN wins under relative L2 error in both representations. For the location of th
 
 This is a bounded mechanism result, not a universal claim about POD. The design, exact controls, interpretation boundary, and raw outputs are documented in [`docs/BURGERS_REPRESENTATION_PILOT.md`](docs/BURGERS_REPRESENTATION_PILOT.md).
 
+## Representation robustness extension
+
+The pilot is now tested across ten paired seeds, spatial grids of 64, 128, and
+256 points, and modal budgets of 2, 4, 8, and 16. The original four-mode result
+survives: KNN wins the steepest-gradient location metric on the full grid in
+30 of 30 paired seed-resolution blocks, while ridge wins after four-mode POD in
+29 of 30.
+
+The sweep also locates the boundary of the effect. At eight and sixteen modes,
+the reversal disappears and KNN wins again. Four modes retain about 99.39
+percent of output variance on average, while eight retain about 99.98 percent.
+High retained variance therefore does not identify the modal budget at which a
+local observable or its model ranking becomes stable.
+
+![Burgers robustness sweep](results/burgers_robustness_variance_observable.png)
+
+![Burgers winner probability](results/burgers_robustness_winner_probability.png)
+
+The complete design, bootstrap intervals, negative gradient-aware control, and
+interpretation boundary are in
+[`docs/BURGERS_REPRESENTATION_ROBUSTNESS.md`](docs/BURGERS_REPRESENTATION_ROBUSTNESS.md).
+
 ## Quick start
 
 ```bash
@@ -68,6 +90,12 @@ source .venv/bin/activate
 pip install -e ".[dev]"
 pinn-audit
 pytest -q
+```
+
+Run the larger paired representation sweep explicitly:
+
+```bash
+pinn-audit --robustness
 ```
 
 To regenerate the versioned dataset directly from the public arXiv source:
