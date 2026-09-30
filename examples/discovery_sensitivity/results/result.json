@@ -1,0 +1,15 @@
+{
+  "seeds": [
+    11,
+    22,
+    33,
+    44,
+    55
+  ],
+  "auc_means": {
+    "logistic": 0.8464423312499999,
+    "boosted": 0.90557319765625
+  },
+  "reversal_scenarios": 0,
+  "total_scenarios": 16
+}

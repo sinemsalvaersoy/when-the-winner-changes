@@ -82,6 +82,21 @@ The complete design, bootstrap intervals, negative gradient-aware control, and
 interpretation boundary are in
 [`docs/BURGERS_REPRESENTATION_ROBUSTNESS.md`](docs/BURGERS_REPRESENTATION_ROBUSTNESS.md).
 
+## Synthetic discovery sensitivity pilot
+
+A separate [particle physics mechanism pilot](examples/discovery_sensitivity/README.md)
+compares classifier ROC AUC with expected local discovery sensitivity in a synthetic
+resonance search. Its [event-level detector extension](examples/discovery_sensitivity/DETECTOR_RESPONSE.md)
+propagates paired scale and resolution changes through frozen classifiers and cuts,
+records selection migrations, and profiles detector-derived background templates.
+
+The prespecified runs do **not** produce a ranking reversal. Boosting remains more
+sensitive, while the ordering of gross selection migration changes between scale
+and resolution variations. These are bounded synthetic findings, not calibrated
+detector performance. Profile range restrictions and the boundary fit are documented.
+
+![Detector response mechanism](examples/discovery_sensitivity/results/detector/detector_mechanism.png)
+
 ## Quick start
 
 ```bash

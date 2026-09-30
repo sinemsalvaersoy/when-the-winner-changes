@@ -1,0 +1,2 @@
+__pycache__/
+results/detector/events_*.npz

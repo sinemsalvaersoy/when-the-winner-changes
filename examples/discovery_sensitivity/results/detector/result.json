@@ -1,0 +1,23 @@
+{
+  "seeds": [
+    11,
+    22,
+    33,
+    44,
+    55
+  ],
+  "events_per_class_per_split": 32000,
+  "profile_means": {
+    "logistic": {
+      "z_known_background": 6.706681174724716,
+      "z_norm_only": 6.181785772110205,
+      "z_norm_and_response": 6.064237474058172
+    },
+    "boosted": {
+      "z_known_background": 7.878355665027222,
+      "z_norm_only": 7.0745833834474,
+      "z_norm_and_response": 7.057777421318003
+    }
+  },
+  "boundary_fits": 1
+}
