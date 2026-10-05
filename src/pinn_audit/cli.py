@@ -25,6 +25,7 @@ from .plots import (
 from .report import build_report
 from .mechanism_report import build_mechanism_report
 from .representation_pilot import write_pilot_outputs, write_robustness_outputs
+from .representation_boundaries import write_boundary_outputs
 
 
 def main() -> None:
@@ -37,6 +38,11 @@ def main() -> None:
         "--robustness",
         action="store_true",
         help="Run the full Burgers representation robustness sweep",
+    )
+    parser.add_argument(
+        "--boundaries",
+        action="store_true",
+        help="Extract state, dynamics, inference, and decision boundaries",
     )
     args = parser.parse_args()
 
@@ -72,6 +78,8 @@ def main() -> None:
     write_pilot_outputs(args.output)
     if args.robustness:
         write_robustness_outputs(args.output)
+    if args.boundaries:
+        write_boundary_outputs(args.output)
 
 
 if __name__ == "__main__":

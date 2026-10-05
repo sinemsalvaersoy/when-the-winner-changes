@@ -82,6 +82,31 @@ The complete design, bootstrap intervals, negative gradient-aware control, and
 interpretation boundary are in
 [`docs/BURGERS_REPRESENTATION_ROBUSTNESS.md`](docs/BURGERS_REPRESENTATION_ROBUSTNESS.md).
 
+## Representation boundary audit
+
+The next experiment asks how much representational capacity is required for
+four different purposes. Across viscous Burgers and a damped-wave family, it
+extracts separate case-level boundaries for state reconstruction, forward
+dynamics, parameter inference, and an operational decision.
+
+The primary boundary is the first POD rank that passes its prespecified rule and
+continues to pass at every larger tested rank. Temporary passes, later failures,
+and unresolved cases remain visible rather than being forced into a monotone
+story.
+
+In the versioned run, median state boundaries are rank 32 in both PDE families.
+Median dynamics boundaries are rank 16 for Burgers and rank 32 for damped wave;
+median inference boundaries are rank 16 for both. Most binary decisions remain
+unchanged at rank 2, but one Burgers boundary case requires rank 32 even though
+its state and dynamics stabilize at rank 16. Decision preservation is therefore
+neither implied by field fidelity nor ordered uniformly after it.
+
+![Representation boundaries](results/representation_boundaries.png)
+
+The paired-noise design, calibration split, exact-subspace control, thresholds,
+and interpretation limits are documented in
+[`docs/REPRESENTATION_BOUNDARY_AUDIT.md`](docs/REPRESENTATION_BOUNDARY_AUDIT.md).
+
 ## Synthetic discovery sensitivity pilot
 
 A separate [particle physics mechanism pilot](examples/discovery_sensitivity/README.md)
@@ -111,6 +136,12 @@ Run the larger paired representation sweep explicitly:
 
 ```bash
 pinn-audit --robustness
+```
+
+Extract the cross-PDE preservation boundaries:
+
+```bash
+pinn-audit --boundaries
 ```
 
 To regenerate the versioned dataset directly from the public arXiv source:

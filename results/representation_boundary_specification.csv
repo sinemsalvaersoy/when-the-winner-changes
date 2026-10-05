@@ -1,0 +1,8 @@
+criterion,definition,threshold
+state,mean observation-field relative L2,0.05
+dynamics,future-field relative L2 after compressed initial state,0.15
+inference,mean posterior total variation from full-grid oracle,0.1
+decision,action disagreement and false-safe rate,0.05
+decision_false_safe,false-safe rate,0.05
+action_probability,intervene when posterior hazard probability exceeds,0.5
+hazard_calibration,median future QoI on separate calibration cases,8.0
