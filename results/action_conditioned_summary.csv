@@ -1,0 +1,7 @@
+pde,pathway,cases,resolved_fraction,median_stable_rank,maximum_stable_rank,cases_with_order_violations
+burgers,combined,10,1.0,16.0,32,1
+burgers,inference_only,10,1.0,2.0,32,0
+burgers,response_only,10,1.0,16.0,32,1
+damped_wave,combined,10,1.0,8.0,32,3
+damped_wave,inference_only,10,1.0,2.0,32,0
+damped_wave,response_only,10,1.0,8.0,32,3

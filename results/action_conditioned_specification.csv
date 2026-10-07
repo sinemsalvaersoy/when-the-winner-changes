@@ -1,0 +1,11 @@
+criterion,definition,value
+actions,ordered control levels,"none, moderate, strong"
+burgers_control,body force,-gain*(u-mean(u))
+wave_control,active velocity feedback,-2*gain*u_t
+burgers_action_costs,"none, moderate, strong","(0.0, 0.08, 0.24)"
+wave_action_costs,"none, moderate, strong","(0.0, 0.01, 0.08)"
+burgers_hazard_threshold,calibration quantile of uncontrolled QoI,0.5
+wave_hazard_threshold,calibration quantile of uncontrolled QoI,0.25
+action_disagreement,mean disagreement from paired full-grid action,0.05
+under_control,representation selects weaker action than full grid,0.05
+normalized_regret,grid expected regret divided by one plus optimal loss,0.02

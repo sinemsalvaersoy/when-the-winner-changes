@@ -107,6 +107,28 @@ The paired-noise design, calibration split, exact-subspace control, thresholds,
 and interpretation limits are documented in
 [`docs/REPRESENTATION_BOUNDARY_AUDIT.md`](docs/REPRESENTATION_BOUNDARY_AUDIT.md).
 
+## Action-conditioned decision audit
+
+The next stage turns the binary intervention label into a physical control
+problem. After the observation window, Burgers receives proportional body-force
+feedback and the damped wave receives active velocity damping. For every
+parameter candidate, the audit simulates the future quantity of interest under
+no, moderate, and strong control, then chooses the action with minimum posterior
+expected loss.
+
+Three matched pathways isolate where representation loss enters: posterior
+compression only, controlled-response compression only, and both together. In
+the versioned run, median inference-only boundaries are rank 2 for both PDE
+families. Median response-only and combined boundaries are rank 16 for Burgers
+and rank 8 for damped wave. Here the counterfactual response to an action, not
+the posterior alone, sets the larger representation requirement.
+
+![Action-conditioned decision boundaries](results/action_conditioned_boundaries.png)
+
+The utility, paired-noise design, causal decomposition, negative controls, and
+limits are documented in
+[`docs/ACTION_CONDITIONED_DECISION_AUDIT.md`](docs/ACTION_CONDITIONED_DECISION_AUDIT.md).
+
 ## Synthetic discovery sensitivity pilot
 
 A separate [particle physics mechanism pilot](examples/discovery_sensitivity/README.md)
@@ -142,6 +164,12 @@ Extract the cross-PDE preservation boundaries:
 
 ```bash
 pinn-audit --boundaries
+```
+
+Run the controlled-forcing decision audit:
+
+```bash
+pinn-audit --actions
 ```
 
 To regenerate the versioned dataset directly from the public arXiv source:

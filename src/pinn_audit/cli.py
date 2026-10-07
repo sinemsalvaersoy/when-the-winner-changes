@@ -26,6 +26,7 @@ from .report import build_report
 from .mechanism_report import build_mechanism_report
 from .representation_pilot import write_pilot_outputs, write_robustness_outputs
 from .representation_boundaries import write_boundary_outputs
+from .action_conditioned_decisions import write_action_outputs
 
 
 def main() -> None:
@@ -43,6 +44,11 @@ def main() -> None:
         "--boundaries",
         action="store_true",
         help="Extract state, dynamics, inference, and decision boundaries",
+    )
+    parser.add_argument(
+        "--actions",
+        action="store_true",
+        help="Audit action-conditioned QoIs under controlled forcing",
     )
     args = parser.parse_args()
 
@@ -80,6 +86,8 @@ def main() -> None:
         write_robustness_outputs(args.output)
     if args.boundaries:
         write_boundary_outputs(args.output)
+    if args.actions:
+        write_action_outputs(args.output)
 
 
 if __name__ == "__main__":
