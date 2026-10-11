@@ -2,13 +2,17 @@
 
 [![audit-ci](https://github.com/sinemsalvaersoy/when-the-winner-changes/actions/workflows/ci.yml/badge.svg)](https://github.com/sinemsalvaersoy/when-the-winner-changes/actions/workflows/ci.yml)
 
-## A reliability audit of PINN benchmarks
+## Representation, inference and decision fidelity in scientific AI
+
+This project audits the preservation of physical inference and intervention decisions across representations.
+
+In a controlled Burgers case, rank 16 POD passed all six posterior fidelity criteria yet changed the recommended action.
+
+The experiments below trace representation loss through model rankings, parameter inference and intervention decisions.
 
 A benchmark reports a winner. This project asks whether the winner survives contact with the benchmark's own evidence.
 
 PINN methods are often compared through a compact leaderboard, but a rank can change when the source table changes, a stochastic run is repeated, or the definition of error changes. This repository turns those possibilities into an executable audit.
-
-> Agreement is evidence. Sometimes it is evidence about the limits of the test.
 
 ## What this project audits
 
