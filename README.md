@@ -6,7 +6,7 @@
 
 This project audits the preservation of physical inference and intervention decisions across representations.
 
-In a controlled Burgers case, rank 16 POD passed all six posterior fidelity criteria yet changed the recommended action.
+In the versioned Burgers boundary audit (case 7, rank 16 POD), the mean posterior total-variation distance from the full-grid posterior is 0.069, passing the specified 0.10 threshold. The binary intervention decision nevertheless differs in 2 of 30 paired noise draws, exceeding the 5% disagreement threshold. This is a conditional counterexample for the specified posterior criterion and decision rule. See the [recorded result](results/representation_boundary_runs.csv) and the [reproduction test](tests/test_representation_boundaries.py).
 
 The experiments below trace representation loss through model rankings, parameter inference and intervention decisions.
 
@@ -216,3 +216,4 @@ PINNacle belongs to its original authors. This independent audit uses numerical 
 
 Dr. Sinem Şalva Ersoy  
 Experimental particle physicist working on scientific AI, representation, inference, and model reliability.
+

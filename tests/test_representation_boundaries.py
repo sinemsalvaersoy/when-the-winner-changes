@@ -100,3 +100,47 @@ def test_boundary_summary_retains_each_preservation_axis():
         "decision",
     }
     assert summary.loc[summary["preservation"].eq("decision"), "resolved_fraction"].iloc[0] == 0
+
+
+def test_headline_burgers_case_passes_posterior_rule_but_changes_decision():
+    """Reproduce README case 7 with the versioned cases and paired noise."""
+    # Keep the full audit: both systems consume RNG draws before evaluation.
+    config = BoundaryConfig(
+        seed=20261005,
+        grid_points=64,
+        pod_modes=(2, 4, 8, 16, 32, 64),
+        calibration_cases=8,
+        evaluation_cases=10,
+        noise_draws=30,
+    )
+    thresholds = BoundaryThresholds()
+    results, noise = run_boundary_audit(config)
+    case = results[
+        results["pde"].eq("burgers")
+        & results["case"].eq(7)
+        & results["pod_modes"].eq(16)
+    ]
+    assert len(case) == 1
+    row = case.iloc[0]
+    paired = noise[
+        noise["pde"].eq("burgers")
+        & noise["case"].eq(7)
+        & noise["pod_modes"].eq(16)
+    ]
+    assert len(paired) == config.noise_draws
+    assert paired["noise_draw"].nunique() == config.noise_draws
+    disagreements = paired["grid_action"] != paired["representation_action"]
+    assert int(disagreements.sum()) == 2
+    assert np.isclose(
+        row["posterior_total_variation"], 0.0689994583503128,
+        rtol=0, atol=1e-8,
+    )
+    assert np.isclose(
+        row["posterior_total_variation"],
+        paired["posterior_total_variation"].mean(),
+    )
+    assert np.isclose(row["action_disagreement"], 2 / 30)
+    assert row["posterior_total_variation"] <= thresholds.posterior_total_variation
+    assert row["action_disagreement"] > thresholds.action_disagreement
+
+
