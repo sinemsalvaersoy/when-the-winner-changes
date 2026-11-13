@@ -1,0 +1,84 @@
+{
+  "upstream_commit": "cbe947d1564248ad44459912badb2b76699e890e",
+  "config": {
+    "grid_points": 64,
+    "pod_modes": [
+      2,
+      4,
+      8,
+      16,
+      32,
+      64
+    ],
+    "calibration_cases": 8,
+    "evaluation_cases": 10,
+    "noise_draws": 30,
+    "seed": 20261007,
+    "burgers_dt": 0.002,
+    "burgers_observation_times": [
+      0.06,
+      0.12
+    ],
+    "burgers_decision_time": 0.24,
+    "burgers_viscosities": [
+      0.018,
+      0.024,
+      0.03,
+      0.036,
+      0.044,
+      0.052,
+      0.062
+    ],
+    "burgers_noise_sigma": 0.025,
+    "burgers_control_gains": [
+      0.0,
+      2.0,
+      5.0
+    ],
+    "wave_observation_times": [
+      0.16,
+      0.3
+    ],
+    "wave_decision_time": 0.8,
+    "wave_dampings": [
+      0.04,
+      0.08,
+      0.12,
+      0.17,
+      0.23,
+      0.3,
+      0.38
+    ],
+    "wave_noise_sigma": 0.02,
+    "wave_spatial_modes": 20,
+    "wave_control_gains": [
+      0.0,
+      0.25,
+      0.75
+    ],
+    "burgers_action_costs": [
+      0.0,
+      0.08,
+      0.24
+    ],
+    "wave_action_costs": [
+      0.0,
+      0.01,
+      0.08
+    ],
+    "burgers_hazard_quantile": 0.5,
+    "wave_hazard_quantile": 0.25
+  },
+  "new_noise_draws_per_case": 2000,
+  "control_count": 20,
+  "control_seed": 2026111301,
+  "noise_seed": 2026111302,
+  "candidate": "one descending centered-gradient functional at rank16 steepest site, before control",
+  "selection": "all ten original Burgers action cases; no outcome-based case filtering",
+  "posterior": "full grid, frozen identically across representation arms",
+  "reference": "fourth-order finite differences with DOP853, grids 128/256/512, same initial field",
+  "qoi_convergence_relative_tolerance": 0.001,
+  "expected_loss_convergence_absolute_tolerance": 0.0001,
+  "reference_action_stability": "fine-grid margin > 2 * maximum per-action fine/medium expected-loss difference",
+  "scope": "oracle information-restoration diagnostic, not a deployable reduced solver"
+}
