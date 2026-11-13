@@ -1,0 +1,14 @@
+{
+  "python": "3.12.14",
+  "numpy": "2.3.5",
+  "scipy": "1.17.0",
+  "pandas": "2.2.3",
+  "tests_passed": 32,
+  "legacy_action_counts_match_all_cases_ranks16_32": true,
+  "sha256": {
+    "src/pinn_audit/selective_restoration.py": "229159d1312c94166973232f34f93cab40baae4dca5dc7d18d1a118ae1e7b353",
+    "results/selective_restoration/paired.csv.gz": "710c6384526b6a9cd6165a10b933c7618d4c171489e4f6de90210bfa9cc47c3f",
+    "results/selective_restoration/summary.csv": "0d274772899d35b0d6685aa2d5f3275b0a82fea9bc7db96a0e9efca960e6f90b",
+    "results/selective_restoration/paired_comparison.csv": "ff5a03ef0b1067cb8a7fbdd730bd46386d3a3fcf651cc7b86aaace716c22edd0"
+  }
+}

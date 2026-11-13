@@ -133,6 +133,22 @@ The utility, paired-noise design, causal decomposition, negative controls, and
 limits are documented in
 [`docs/ACTION_CONDITIONED_DECISION_AUDIT.md`](docs/ACTION_CONDITIONED_DECISION_AUDIT.md).
 
+## Selective physical-information restoration
+
+The [selective restoration experiment](docs/SELECTIVE_RESTORATION.md) holds
+the full-grid posterior, actions and loss fixed while restoring one local
+gradient outside rank 16. Twenty equal-dimension, equal-energy controls test
+whether any added information would do. A separately implemented numerical
+reference checks the consequences of changed actions. The
+[recorded results](results/selective_restoration/RESULTS.md) distinguish partial
+recovery from a sufficient explanation of the rank-32 improvement.
+
+The [distributed-sensitivity follow-up](docs/DISTRIBUTED_RESTORATION.md) retains
+the failed case 5 and restores a weighted initial-state coefficient selected
+from all three controlled responses, while holding the original local gradient
+fixed. It compares matched-energy local and first-order-null corrections. See
+the [separate results](results/distributed_restoration/RESULTS.md).
+
 ## Synthetic discovery sensitivity pilot
 
 A separate [particle physics mechanism pilot](examples/discovery_sensitivity/README.md)
@@ -216,4 +232,5 @@ PINNacle belongs to its original authors. This independent audit uses numerical 
 
 Dr. Sinem Şalva Ersoy  
 Experimental particle physicist working on scientific AI, representation, inference, and model reliability.
+
 

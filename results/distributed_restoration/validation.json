@@ -1,0 +1,18 @@
+{
+  "python": "3.12.14",
+  "numpy": "2.3.5",
+  "scipy": "1.17.0",
+  "pandas": "2.2.3",
+  "tests_passed": 36,
+  "previous_run_baseline_actions_and_posterior_hashes_match": true,
+  "previous_local_candidate_actions_match": true,
+  "noise_draws_reused_from_previous_experiment": true,
+  "sha256": {
+    "src/pinn_audit/selective_restoration.py": "1258e444958bed30a67d8846e3af710ab32d6c3169464439c803f4093dcca58a",
+    "src/pinn_audit/distributed_restoration.py": "6fd4433dfe8197a1755ecb177ab794da8d0ea9f798e965d1410e2bbaf2727314",
+    "results/distributed_restoration/paired.csv.gz": "fb2de41a18f15fbce00bb948f2e836e04f0a3085bdb37b8b24ca2ecba555445f",
+    "results/distributed_restoration/sensitivity_directions.csv": "befd48bff910f822dbd020bac447861ad8de9d4b5c0c38d922ae5849966b5bf4",
+    "results/distributed_restoration/summary.csv": "e52b48aac65d1a0a5529318aeeb9d995bb9ab307e88471783d9ec402cacca18b",
+    "results/distributed_restoration/paired_comparison.csv": "34f0c4f606ee0cfd94b6a9549957cb2537a09d41df2fa43fca7c7ac031a57eec"
+  }
+}
