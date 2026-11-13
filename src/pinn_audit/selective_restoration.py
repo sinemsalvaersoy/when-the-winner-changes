@@ -107,7 +107,8 @@ def qois(fields):
     return -np.min(0.5 * (np.roll(fields, -1, axis=-1) - np.roll(fields, 1, axis=-1)), axis=-1)
 
 
-def run(output: Path, draws: int = 2000, controls: int = 20):
+def run(output: Path, draws: int = 2000, controls: int = 20, *,
+        restorer=None, target_label="gradient_restored", specification=None):
     if draws < 1 or controls < 1:
         raise ValueError("Positive draw and control counts required")
     config = ActionConfig()
@@ -130,9 +131,12 @@ def run(output: Path, draws: int = 2000, controls: int = 20):
         "reference_action_stability": "fine-grid margin > 2 * maximum per-action fine/medium expected-loss difference",
         "scope": "oracle information-restoration diagnostic, not a deployable reduced solver",
     }
+    if specification is not None:
+        manifest.update(specification)
+    manifest["target_label"] = target_label
     # Write the specification before any outcome is evaluated.
     (output / "specification.json").write_text(json.dumps(manifest, indent=2) + "\n")
-    records, features, convergence, physics = [], [], [], []
+    records, features, convergence, physics, reference_rows = [], [], [], [], []
     for local_case in range(config.evaluation_cases):
         ci = config.calibration_cases + local_case
         states = system["libraries"][ci, :, -1]
@@ -142,13 +146,22 @@ def run(output: Path, draws: int = 2000, controls: int = 20):
         legacy = rng.normal(0, sigma, size=(30,) + observation.shape)
         fresh = new_rng.normal(0, sigma, size=(draws,) + observation.shape)
         variants = {"full_grid": states, "rank32": _pod_reconstruct(states, system["mean"], system["basis"][:32])}
-        reduced, restored, matched = [], [], []
+        reduced, restored, matched, extra_fields = [], [], [], {}
         for pi, state in enumerate(states):
-            r, s, c, diagnostics = restore_local_gradient(state, system["mean"], system["basis"][:16], control_vectors)
+            if restorer is None:
+                r, s, c, diagnostics = restore_local_gradient(state, system["mean"], system["basis"][:16], control_vectors)
+            else:
+                r, s, c, diagnostics, extras = restorer(
+                    state, system["mean"], system["basis"][:16], control_vectors,
+                    parameter=float(config.burgers_viscosities[pi]), config=config,
+                    case=local_case, parameter_index=pi)
+                for label, field in extras.items():
+                    extra_fields.setdefault(label, []).append(field)
             reduced.append(r); restored.append(s); matched.append(c)
             features.append({"case": local_case, "parameter_index": pi, **diagnostics})
         variants["rank16"] = np.asarray(reduced)
-        variants["gradient_restored"] = np.asarray(restored)
+        variants[target_label] = np.asarray(restored)
+        variants.update({label: np.asarray(fields) for label, fields in extra_fields.items()})
         for index in range(controls):
             variants[f"control_{index:02d}"] = np.asarray(matched)[:, index]
         losses = {}
@@ -164,6 +177,11 @@ def run(output: Path, draws: int = 2000, controls: int = 20):
         initial = np.repeat(states[:, None], 3, axis=1)
         references = {n: qois(independent_response(initial, config.burgers_viscosities,
                         config.burgers_control_gains, float(system["horizon"]), n)) for n in (128, 256, 512)}
+        for n, values in references.items():
+            for pi, row in enumerate(values):
+                for ai, value in enumerate(row):
+                    reference_rows.append({"case": local_case, "reference_grid": n,
+                        "parameter_index": pi, "action": ai, "qoi": float(value)})
         ref_losses = {n: _loss_matrix(q, system["hazard_threshold"], system["action_costs"]) for n, q in references.items()}
         ref_error = float(np.max(np.abs(references[512] - references[256]) / np.maximum(np.abs(references[512]), 1e-12)))
         convergence.append({"case": local_case, "qoi_max_relative_128_256": float(np.max(np.abs(references[128] - references[256]) / np.maximum(np.abs(references[256]), 1e-12))),
@@ -199,6 +217,7 @@ def run(output: Path, draws: int = 2000, controls: int = 20):
     pd.DataFrame(features).to_csv(output / "restoration_checks.csv", index=False)
     pd.DataFrame(convergence).to_csv(output / "reference_convergence.csv", index=False)
     pd.DataFrame(physics).to_csv(output / "response_qois.csv", index=False)
+    pd.DataFrame(reference_rows).to_csv(output / "reference_qois.csv", index=False)
     summary = paired.groupby(["case", "batch", "arm"], as_index=False).agg(
         draws=("draw", "size"), disagreements=("disagree_full_grid", "sum"),
         reference_disagreements=("disagree_reference", "sum"),
@@ -211,7 +230,7 @@ def run(output: Path, draws: int = 2000, controls: int = 20):
     bootstrap = np.random.default_rng(2026111303)
     for case, group in paired[paired.batch.eq("fresh")].groupby("case"):
         base = group[group.arm.eq("rank16")].sort_values("draw")
-        target = group[group.arm.eq("gradient_restored")].sort_values("draw")
+        target = group[group.arm.eq(target_label)].sort_values("draw")
         delta = base.reference_regret.to_numpy() - target.reference_regret.to_numpy()
         indices = bootstrap.integers(0, len(delta), size=(2000, len(delta)))
         lo, hi = np.quantile(delta[indices].mean(axis=1), [0.025, 0.975])

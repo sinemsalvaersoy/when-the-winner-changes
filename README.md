@@ -143,6 +143,12 @@ reference checks the consequences of changed actions. The
 [recorded results](results/selective_restoration/RESULTS.md) distinguish partial
 recovery from a sufficient explanation of the rank-32 improvement.
 
+The [distributed-sensitivity follow-up](docs/DISTRIBUTED_RESTORATION.md) retains
+the failed case 5 and restores a weighted initial-state coefficient selected
+from all three controlled responses, while holding the original local gradient
+fixed. It compares matched-energy local and first-order-null corrections. See
+the [separate results](results/distributed_restoration/RESULTS.md).
+
 ## Synthetic discovery sensitivity pilot
 
 A separate [particle physics mechanism pilot](examples/discovery_sensitivity/README.md)
